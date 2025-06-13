@@ -126,7 +126,7 @@ export default function Portfolio() {
       title: "API Omie",
       description:
         "Para integrar o sistema de gestão de projetos, foi implementada uma conexão com a API do Omie. Isso permite consultar dados dos projetos, atualizar status, criar e gerenciar atividades, além de editar informações de forma automatizada.", 
-      image: darkMode ? "/images/projetos/api-Omie-dark.svg" : "/images/projetos/api-Omie-light.svg",
+      image: darkMode ? "/images/projetos/api-omie-dark.svg" : "/images/projetos/api-omie-light.svg",
       technologies: ["Python", "Django","HTML", "CSS", "JavaScript","requests", "API"],
       category: "equipe",
       status: "completed",
