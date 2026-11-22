@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { m as motion, AnimatePresence, MotionConfig, LazyMotion, domAnimation } from "framer-motion"
+import dynamic from "next/dynamic"
 import {
   Moon,
   Sun,
@@ -15,311 +16,27 @@ import {
   Filter,
   Search,
   ExternalLink,
-  MessageCircle,
   Award,
   Coffee,
 } from "lucide-react"
-import ParticleBackground from "@/components/particle-background"
 import ProjectCard from "@/components/project-card"
 import TechStack from "@/components/tech-stack"
 import CounterStat from "@/components/counter-stat"
+import { filterProjects, projectGroups, projects } from "@/lib/projects"
+
+const ParticleBackground = dynamic(() => import("@/components/particle-background"), { ssr: false })
 
 export default function Portfolio() {
   const [darkMode, setDarkMode] = useState(false)
   const [mounted, setMounted] = useState(false)
 
-  const [projects, setProjects] = useState([
-  
-    {
-      id: 15,
-      title: "Workflow, Bots e Agentes",
-      description:
-     "Criei assistentes pessoais que cuidam da minha rotina: organizam agenda, gerenciam e-mails do meu domínio e automatizam tarefas repetitivas!", 
-      image: darkMode ? "/images/projetos/workflow-dark.svg" : "/images/projetos/workflow-light.svg",
-      technologies: ["Python", "Bots","Eu2Make","appsmith", "N8N","Groq","Zoho"],
-      category: "individual",
-      status: "in_progress",
-      featured: true,
-      demoLink: "https://github.com/Ary-Pedro?tab=repositories",
-      codeLink: "https://github.com/Ary-Pedro?tab=repositories",
-    },
-    {
-      id: 17,
-      title: "Raspagem de dados",
-      description:
-        "Desenvolvi  um servidor Selenium para executar raspagens simultâneas em múltiplos sites, com processamento eficiente dos dados coletados usando Pandas.",
-      image: darkMode ? "/images/projetos/web-scraping-dark.svg" : "/images/projetos/web-scraping-light.svg",
-      technologies: ["Python", "Selenium", "Pandas","Web Scraping"],
-      category: "individual",
-      status: "in_progress",
-      featured: false,	
-      demoLink: "https://github.com/Ary-Pedro?tab=repositories",
-      codeLink: "https://github.com/Ary-Pedro?tab=repositories",
-    },
-    {
-      id: 18,
-      title: "Testes em Java (Prática)",
-      description:
-         "Implementações em Java: estruturas de dados (árvores, pilhas, filas), algoritmos de busca binária e projetos de POO, com análise de complexidade Big O para otimização de performance.",
-      image: darkMode ? "/images/projetos/java-dark.svg" : "/images/projetos/java-light.svg",
-      technologies: ["Java","WindowBuilder","POO", "estruturas de Dados","busca binária"],
-      category: "individual",
-      status: "completed",
-      featured: "Acadêmico",
-      demoLink: "https://replit.com/@PedroCezar2",
-      codeLink: "https://github.com/Ary-Pedro?tab=repositories",
-    },
-      {
-      id: 21,
-      title: "roleta de filmes",
-      description:
-      "Catálogo pessoal de filmes: controle o que já assistiu, adicione novos títulos e receba sugestões automáticas integradas a APIs de cinema.",
-      image: darkMode ? "/images/projetos/spin-dark.svg" : "/images/projetos/spin-light.svg",
-      technologies: ["JavaScript", "react", "postgreSQL", "API"],
-      category: "equipe",
-      status: "in_progress",
-      featured: false,
-      demoLink: "https://github.com/Ary-Pedro?tab=repositories",
-      codeLink: "https://github.com/Ary-Pedro?tab=repositories",
-    },
-    {
-      id: 20,
-      title: "Biblioteca",
-      description:
-"Sistema de biblioteca com API: gerencia acervo de livros, marca leituras concluídas e aplica algoritmo de ranqueamento para sugerir novas obras com base em avaliações, gêneros preferidos e histórico.",
-      image: darkMode ? "/images/projetos/lib-rank-dark.svg" : "/images/projetos/lib-rank-light.svg",
-      technologies: ["JavaScript", "React", "postgreSQL", "API"],
-      category: "equipe",
-      status: "in_progress",
-      featured: false,
-      demoLink: "https://github.com/Ary-Pedro?tab=repositories",
-      codeLink: "https://github.com/Ary-Pedro?tab=repositories",
-    },
-    {
-      id: 16,
-      title: "Exame DtLabs API",
-      description:
-        "Desenvolvi um backend IoT com FastAPI para gerenciar dados, implementando autenticação JWT, usando PostgreSQL e monitoramento de servidores em containers Docker. Como primeira experiência com a framework, foi incrivelmente gratificante ver toda a arquitetura funcionando na prática!",
-      image: darkMode ? "/images/projetos/fastAPI-dark.svg" : "/images/projetos/fastAPI-light.svg",
-      technologies: ["FastAPI", "Python","JWT","Docker","PostgreSQL"],
-      category: "individual",
-      status: "completed",
-      featured: "Competicão",
-      demoLink: "https://github.com/Ary-Pedro/exame-backend-dtlabs-2025",
-      codeLink: "https://github.com/Ary-Pedro/exame-backend-dtlabs-2025",
-    },
-    {
-      id: 11,
-      title: "Cariocars",
-      description:
-        "Desenvolvido em equipe uma plataforma de aluguel de veículos, criando o design do zero e implementando com Django. O sistema permite atualização dinâmica de imagens e textos pelos administradores.",
-      image: darkMode ? "/images/projetos/cariocars-dark.svg" : "/images/projetos/cariocars-light.svg",
-      technologies: ["Python", "Django","HTML", "CSS", "JavaScript"],
-      category: "Comercial",
-      status: "in_progress",
-      featured: true,
-      demoLink: "https://github.com/Ary-Pedro?tab=repositories",
-      codeLink: "https://github.com/Ary-Pedro?tab=repositories",
-    },
-    {
-      id: 10,
-      title: "API Omie",
-      description:
-        "Para integrar o sistema de gestão de projetos, foi implementada uma conexão com a API do Omie. Isso permite consultar dados dos projetos, atualizar status, criar e gerenciar atividades, além de editar informações de forma automatizada.", 
-      image: darkMode ? "/images/projetos/api-omie-dark.svg" : "/images/projetos/api-omie-light.svg",
-      technologies: ["Python", "Django","HTML", "CSS", "JavaScript","requests", "API"],
-      category: "equipe",
-      status: "completed",
-      featured: "Comercial",
-      demoLink: "https://developer.omie.com.br/",
-      codeLink: "https://github.com/Ary-Pedro?tab=repositories",
-    },
-    {
-      id: 9,
-      title: "API BLING",
-      description:
-        "Para integrar o sistema de gestão de projetos, foi implementada uma conexão com a API da Bling. Isso permite consultar dados de pedidos, atualizar status de vendas, gerenciar contatos, registrar ocorrências e sincronizar estoque de forma automatizada.",
-      image: darkMode ? "/images/projetos/api-bling-dark.svg" : "/images/projetos/api-bling-light.svg",
-      technologies: ["Python", "Django","HTML", "CSS", "JavaScript","requests", "API"],
-      category: "equipe",
-      status: "completed",
-      featured: "Comercial",
-      demoLink: "https://developer.bling.com.br/referencia",
-      codeLink: "https://github.com/Ary-Pedro?tab=repositories",
-    },
-    {
-      id: 19,
-      title: "Arduino",
-      description:
-        "Projetos experimentais utilizando Arduino,  protótipos baseados em Arduino no laboratório da UniLaSalle, com destaque para o desenvolvimento de uma máquina CNC.",
-      image: darkMode ? "/images/projetos/arduino-dark.svg" : "/images/projetos/arduino-light.svg",
-      technologies: ["Arduino", "C++"],
-      category: "equipe",
-      status: "completed",
-      featured: false,
-      demoLink: "https://github.com/Ary-Pedro?tab=repositories",
-      codeLink: "https://github.com/Ary-Pedro?tab=repositories",
-    },
-    {
-      id: 13,
-      title: "Adams Back-End",
-      description:
-    "API do chatbot finalista na NASA Space Apps Challenge 2024. Integra Qdrant Vector Database com a NASA Exoplanet Archive API para processamento de dados astronômicos. Utiliza embeddings vetoriais para consultas precisas sobre exoplanetas, com autenticação JWT e Socket.IO para comunicação em tempo real.",
-      image: darkMode ? "/images/projetos/adams42-dark.svg" : "/images/projetos/adams42-light.svg",
-      technologies: ["langChain", "Python", "Dockfile","Groq","Qdrant"],
-      category: "equipe",
-      status: "completed",
-      featured: "Competicão",
-      demoLink: "https://adams42-65lztb96t-arypedros-projects.vercel.app/",
-      codeLink: "https://github.com/Ary-Pedro/adams42-withServer",
-    },
-    {
-      id: 12,
-      title: "Adams Front-End",
-      description:
-    "Interface finalista na NASA Space Apps Challenge 2024 para exploração de exoplanetas. Consome dados astronômicos em tempo real via Socket.IO, com visualização de constelações e sistema de busca contextual. Desenvolvido com componentes modulares e design responsivo para experiência educativa imersiva.",
-      image: darkMode ? "/images/projetos/adams42-dark.svg" : "/images/projetos/adams42-light.svg",
-      technologies: ["React", "Vercel"],
-      category: "equipe",
-      status: "completed",
-      featured: "Competicão",
-      demoLink: "https://adams42-65lztb96t-arypedros-projects.vercel.app/",
-      codeLink: "https://github.com/Ary-Pedro/Adams42-front",
-    },
-    {
-      id: 8,
-      title: "DeAaZ Tur",
-      description:
-      "Solução local para empresas de apoio à documentação de turismo com: controle de perfis (vendedor, administrador e executivo), cadastro de clientes, processamento de vendas, análise de desempenho com rankeamento, monitoramento financeiro via página de relatórios mensais e mapeamento de rotas para visitas a parceiros.", 
-      image: darkMode ? "/images/projetos/deaaztur-dark.svg" : "/images/projetos/deaaztur-light.svg",
-      technologies: ["Python", "Django","HTML", "CSS", "JavaScript","Pandas"],
-      category: "equipe",
-      status: "completed",
-      featured: "Comercial",
-      demoLink: "https://github.com/Ary-Pedro/setup_DeAaZTour",
-      codeLink: "https://github.com/Ary-Pedro/setup_DeAaZTour",
-    },
-    {
-      id: 7,
-      title: "(ONG) ABAP-RJ Back",
-      description:
-        "Backend do sistema ABAP-RJ desenvolvido com Django, responsável pela gestão de dados de beneficiários, voluntários, funcionários e gerentes. Implementa lógica de negócio completa, API para integração com frontend e painéis administrativos, utilizando PostgreSQL para armazenamento e Docker para conteinerização.",
-      image: darkMode ? "/images/projetos/abap-rj-dark.svg" : "/images/projetos/abap-rj-light.svg",
-      technologies: ["Python", "Django","HTML", "CSS", "JavaScript","PostgreSQL","Docker"],
-      category: "equipe",
-      status: "in_progress",
-      featured: true,
-      demoLink: "https://github.com/Ary-Pedro/Projeto-AbapRJ",
-      codeLink: "https://github.com/Ary-Pedro/Projeto-AbapRJ",
-    },
-    {
-      id: 6,
-      title: "(ONG) ABAP-RJ Front",
-      description:
-      "Frontend para o sistema ABAP-RJ com duas versões: protótipo inicial em React para validação de conceito e versão final em WordPress para blog institucional. Oferece interface de cadastro de eventos.",
-      image: darkMode ? "/images/projetos/abap-rj-dark.svg" : "/images/projetos/abap-rj-light.svg",
-      technologies: ["React", "Wordpress"],
-      category: "equipe",
-      status: "completed",
-      featured: true,
-      demoLink: "https://classy-marigold-091c1c.netlify.app/",
-      codeLink: "https://github.com/Ary-Pedro/Projeto-AbapRJ",
-    },
-    {
-      id: 5,
-      title: "Unity Labs",
-      description:
-      "Atuei por dois anos em projetos desenvolvidos com Unity (2D, 3D e VR), assumindo gradualmente os papéis de Líder de Equipe e Monitor. Destaque para o desenvolvimento do simulador terapêutico Aerofobia, realizado em parceria com o núcleo de psicologia. Responsabilidades técnicas: implementação de mecânicas, otimização de performance e participação ativa no game design. Responsabilidades de liderança: gestão de pipelines utilizando métodos ágeis e mentoria de desenvolvedores da equipe.",
-      image: darkMode ? "/images/projetos/unity-labs-dark.svg" : "/images/projetos/unity-labs-light.svg",
-      technologies: ["Unity", "C#","3D","VR","Blender"],
-      category: "equipe",
-      status: "completed",
-      featured: "Acadêmico",
-      demoLink: "https://github.com/Ary-Pedro?tab=repositories",
-      codeLink: "https://github.com/Ary-Pedro?tab=repositories",
-    },
-    {
-      id: 14,
-      title: "Mapeamento da Flora Marítima",
-      description:
-      "Projeto de Mapeamento e Visualização de Dados da Flora Marítima: Aplicação web desenvolvida para a NASA Space Apps Challenge 2023 – primeiro hackathon espacial em Niterói, sediado na Unilasalle. Oferece visualização interativa de dados biogeográficos de espécies marinhas, integrando camadas cartográficas e bancos de dados oceanográficos para análise espacial",
-      image: darkMode ? "/images/projetos/flora-maritima-dark.svg" : "/images/projetos/flora-maritima-light.svg",
-      technologies: ["Python", "HTML", "CSS", "JavaScript"],
-      category: "equipe",
-      status: "completed",
-      featured: "Competicão",
-      demoLink: "https://replit.com/@LucasSilva191/AchingThinRadius#index.html",
-      codeLink: "https://replit.com/@LucasSilva191/AchingThinRadius#index.html",
-    },
-    {
-      id: 4,
-      title: "Testes em Python (Prática)",
-      description:
-      "Implementações em Python: Desenvolvimento Web com ênfase na aplicação de princípios de usabilidade, acessibilidade e experiência do usuário, utilizando práticas alinhadas ao Design Thinking, arquitetura da informação e organização semântica de páginas, bem como o uso estratégico da teoria das cores, tipografia, psicologia das formas e escolha de elementos visuais, garantindo interfaces digitais coerentes, intuitivas e eficazes, em consonância com boas práticas de desenvolvimento e padrões modernos da web.",
-      image: darkMode ? "/images/projetos/python-dark.svg" : "/images/projetos/python-light.svg",
-      technologies: ["Python","CustomTkinter", "POO","Desenvolvimento Web","UI/UX", "Vanilla"],
-      category: "individual",
-      status: "completed",
-      featured: "Acadêmico",
-      demoLink: "https://replit.com/@PedroCezar2",
-      codeLink: "https://github.com/Ary-Pedro?tab=repositories",
-    },
-    {
-      id: 3,
-      title: "Testes em C (Prática)",
-      description:
-        "Coletânea de exercícios práticos em linguagem C, explorando fundamentos da programação estruturada com foco em manipulação de dados, uso eficiente de ponteiros, definição de funções, controle de fluxo, alocação dinâmica de memória, recursividade e princípios fundamentais de entrada e saída, estruturando uma base sólida para o desenvolvimento de algoritmos robustos e eficientes.",
-      image: darkMode ? "/images/projetos/c-dark.svg" : "/images/projetos/c-light.svg",
-      technologies:  ["Structs", "Arrays e Matrizes","Funções", "Ponteiros", "Ponteiros para Funções", "Alocação Dinâmica (malloc, free)", "Recursividade"],
-      category: "individual",
-      status: "completed",
-      featured: "Acadêmico",
-      demoLink: "https://docs.google.com/document/d/1G8QCeIEsISvphW_SqOeAX5cp7LR7RzKbfANNlHFAh3Y/edit?usp=sharing",
-      codeLink: "https://replit.com/@PedroCezar2",
-    },
-    {
-      id: 2,
-      title: "Sistema de Academia",
-      description:
-        "Sistema de gerenciamento de academia desenvolvido em C, com funcionalidades de cadastro, consulta e manipulação de dados.",
-      image: darkMode ? "/images/projetos/gym-dark.svg" : "/images/projetos/gym-light.svg",
-      technologies: ["C", "CRUD", "bin"],
-      category: "equipe",
-      status: "completed",
-      featured: "Acadêmico",
-      demoLink: "https://replit.com/@PedroCezar2/Trabalho",
-      codeLink: "https://github.com/Ary-Pedro/Sistema-academia",
-    },
-    {
-      id: 1,
-      title: "Manipulador de Imagens",
-      description:
-        "Meu primeiro grande projeto em programação, feito enquanto aprendia vetores e matrizes. Desenvolvi um manipulador de imagens do zero, usando apenas um template e muita lógica. Foi uma experiência intensa e marcante, com minhas primeiras madrugadas vendo código.",
-      image: darkMode ? "/images/projetos/lena-dark.svg" : "/images/projetos/lena-light.svg",
-      technologies: ["C", "imghelpers.h", "libbmp.h"],
-      category: "individual",
-      status: "completed",
-      featured: "Acadêmico",
-      demoLink: "https://replit.com/@PedroCezar2/aula",
-      codeLink: "https://github.com/Ary-Pedro/Manipulador-de-Imagem",
-    },
-  ])
-
-  const [filteredProjects, setFilteredProjects] = useState(projects)
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedFilter, setSelectedFilter] = useState("all")
-  const [githubRepos, setGithubRepos] = useState<number>(0)
-  useEffect(() => {
-    fetch("https://api.github.com/users/ary-pedro")
-      .then((res) => res.json())
-      .then((data) => setGithubRepos(typeof data.public_repos === "number" ? data.public_repos : 0))
-      .catch(() => setGithubRepos(0))
-  }, [])
   useEffect(() => {
     setMounted(true)
     const saved = localStorage.getItem("darkMode")
     if (saved) {
-      setDarkMode(JSON.parse(saved))
+      setDarkMode(saved === "true")
     }
   }, [])
 
@@ -330,40 +47,7 @@ export default function Portfolio() {
     }
   }, [darkMode, mounted])
 
-  // Função principal de filtragem CORRIGIDA
-  useEffect(() => {
-    let filtered = projects
-
-    if (selectedFilter !== "all") {
-      if (selectedFilter === "featured") {
-        // Só exibe se for booleano true
-        filtered = filtered.filter((project) => project.featured === true)
-      } else if (selectedFilter === "completed") {
-        filtered = filtered.filter((project) => project.status === "completed")
-      } else if (selectedFilter === "in_progress") {
-        filtered = filtered.filter((project) => project.status === "in_progress")
-      } else {
-        // Filtro por categoria OU string usada no featured
-        filtered = filtered.filter(
-          (project) =>
-            project.category === selectedFilter ||
-            (typeof project.featured === "string" && project.featured === selectedFilter)
-        )
-      }
-    }
-
-    // Filtro por busca
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (project) =>
-          project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          project.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          project.technologies.some((tech) => tech.toLowerCase().includes(searchTerm.toLowerCase())),
-      )
-    }
-
-    setFilteredProjects(filtered)
-  }, [projects, searchTerm, selectedFilter])
+  const filteredProjects = filterProjects(projects, searchTerm, selectedFilter)
 
   const toggleTheme = () => {
     setDarkMode(!darkMode)
@@ -372,7 +56,7 @@ export default function Portfolio() {
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId)
     if (element) {
-      element.scrollIntoView({ behavior: "smooth" })
+      element.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" })
     }
   }
 
@@ -380,19 +64,28 @@ export default function Portfolio() {
   const filters = [
     { value: "all", label: "Todos" },
     { value: "featured", label: "Destaque" },
-    { value: "Acadêmico", label: "Acadêmico" },
+    { value: "profissional", label: "Profissional" },
+    { value: "autonomo", label: "Autônomo" },
+    { value: "pessoal", label: "Pessoal e prático" },
+    { value: "academico", label: "Acadêmico" },
+    { value: "IA", label: "IA" },
+    { value: "Unity", label: "Unity" },
+    { value: "Hackathon", label: "Hackathon" },
+    { value: "Prática", label: "Prática" },
+    { value: "API", label: "APIs" },
+    { value: "Automação", label: "Automação" },
     { value: "individual", label: "Individual" },
     { value: "equipe", label: "Equipe" },
     { value: "Comercial", label: "Comercial" },
-    { value: "Competicão", label: "Competição" },
+    { value: "Competição", label: "Competição" },
     { value: "completed", label: "Concluídos" },
     { value: "in_progress", label: "Em Andamento" },
   ]
 
-  if (!mounted) return null
-
   return (
-    <div className="min-h-screen relative">
+    <LazyMotion features={domAnimation} strict>
+    <MotionConfig reducedMotion="user">
+    <div className="min-h-screen relative overflow-x-clip">
       {/* CAMADA 1: Background Base - TRANSPARENTE para mostrar partículas */}
       <div
         className={`fixed inset-0 transition-all duration-1000 ${darkMode
@@ -407,7 +100,7 @@ export default function Portfolio() {
       </div>
 
       {/* CAMADA 3: Blur Effect */}
-      <div className={`fixed inset-0 z-20 backdrop-blur-[1px] ${darkMode ? "bg-slate-900/10" : "bg-white/10"}`} />
+      <div className={`fixed inset-0 z-20 ${darkMode ? "bg-slate-900/10" : "bg-white/10"}`} />
 
       {/* CAMADA 4: Header com cor sólida */}
       <motion.header
@@ -450,25 +143,8 @@ export default function Portfolio() {
 
             {/* Theme toggle with smooth, single entrance animation and no re-trigger */}
             <motion.button
-              onClick={() => {
-                toggleTheme()
-                // Troca todas as imagens dos projetos para o modo correto
-                setProjects((prev) =>
-                  prev.map((project) => {
-                    // Regex para pegar o nome base da imagem
-                    const match = project.image.match(/\/images\/projetos\/(.+?)-(dark|light)\.svg$/)
-                    if (!match) return project
-                    const [_, base, oldMode] = match
-                    const newMode = !darkMode ? "dark" : "light"
-                    // Se já está no modo certo, não muda
-                    if (oldMode === newMode) return project
-                    return {
-                      ...project,
-                      image: `/images/projetos/${base}-${newMode}.svg`,
-                    }
-                  })
-                )
-              }}
+              onClick={toggleTheme}
+              aria-label={darkMode ? "Ativar tema claro" : "Ativar tema escuro"}
               whileHover={{ rotate: darkMode ? -15 : 15, transition: { duration: 0.18, type: "tween" } }}
               whileTap={{ scale: 0.95 }}
               className={`p-3 rounded-full transition-all duration-300 ${darkMode
@@ -526,7 +202,7 @@ export default function Portfolio() {
         <section className="min-h-screen flex items-center justify-center pt-20">
           <div className="container mx-auto px-6 text-center">
             <motion.div
-              initial={{ y: 50, opacity: 0 }}
+              initial={false}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.8, delay: 0.2 }}
             >
@@ -547,7 +223,7 @@ export default function Portfolio() {
               </motion.h1>
 
               <motion.p
-                initial={{ y: 30, opacity: 0 }}
+                initial={false}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.8, delay: 0.4 }}
                 className={`text-xl md:text-2xl mb-8 ${darkMode ? "text-gray-300" : "text-gray-600"}`}
@@ -556,20 +232,21 @@ export default function Portfolio() {
               </motion.p>
 
               <motion.div
-                initial={{ y: 30, opacity: 0 }}
+                initial={false}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.8, delay: 0.6 }}
                 className="flex justify-center space-x-6"
               >
                 {[
-                  { icon: Github, href: "https://github.com/ary-pedro" },
-                  { icon: Linkedin, href: "www.linkedin.com/in/pedro-cézar-s-de-souza" },
-                  { icon: Mail, href: "#contato" },
+                  { icon: Github, href: "https://github.com/ary-pedro", label: "GitHub" },
+                  { icon: Linkedin, href: "https://www.linkedin.com/in/pedro-cézar-s-de-souza", label: "LinkedIn" },
+                  { icon: Mail, href: "#contato", label: "Contato" },
 
                 ].map((social, index) => (
                   <motion.a
                     key={index}
                     href={social.href}
+                    aria-label={social.label}
                     whileHover={{ scale: 1.2, y: -5 }}
                     whileTap={{ scale: 0.9 }}
                     className={`p-4 rounded-full transition-all duration-300 backdrop-blur-sm border ${darkMode
@@ -617,8 +294,8 @@ export default function Portfolio() {
                       }
 
                       return [
-                        { icon: Award, value: githubRepos ? githubRepos : 0, label: "Projetos", suffix: "+" },
-                        { icon: Users, value: 4, label: "Clientes", suffix: "+" },
+                        { icon: Award, value: projects.length, label: "Projetos", suffix: "+" },
+                        { icon: Users, value: 6, label: "Clientes", suffix: "+" },
                         { icon: Coffee, value: totalCoffees, label: "Cafés", suffix: "+" },
                         { icon: Code, value: years, label: "Anos", suffix: "+" },
                       ].map((stat, index) => (
@@ -780,6 +457,7 @@ export default function Portfolio() {
                 <input
                   type="text"
                   placeholder="Buscar projetos..."
+                  aria-label="Buscar projetos"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 backdrop-blur-sm transition-all duration-300 ${darkMode
@@ -790,14 +468,18 @@ export default function Portfolio() {
               </div>
 
               {/* Filter Buttons */}
-              <div className="flex flex-wrap justify-center gap-3">
+              <p className={`md:hidden mb-2 text-sm ${darkMode ? "text-gray-300" : "text-gray-600"}`}>
+                Deslize para ver mais filtros
+              </p>
+              <div className="flex flex-nowrap md:flex-wrap md:justify-center gap-3 overflow-x-auto pb-2">
                 {filters.map((filter) => (
                   <motion.button
                     key={filter.value}
                     onClick={() => setSelectedFilter(filter.value)}
+                    aria-pressed={selectedFilter === filter.value}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className={`px-4 py-2 rounded-full transition-all duration-300 flex items-center space-x-2 backdrop-blur-sm border ${selectedFilter === filter.value
+                    className={`shrink-0 px-4 py-2 rounded-full transition-all duration-300 flex items-center space-x-2 backdrop-blur-sm border ${selectedFilter === filter.value
                       ? darkMode
                         ? "bg-green-500/30 text-green-300 border-green-500/50"
                         : "bg-purple-500/30 text-purple-600 border-purple-500/50"
@@ -814,13 +496,29 @@ export default function Portfolio() {
             </motion.div>
 
             {/* Projects Grid */}
+            <p className={`mb-8 text-sm ${darkMode ? "text-gray-300" : "text-gray-600"}`}>
+              Projetos organizados por área e pelas datas disponíveis.
+            </p>
             <AnimatePresence>
               {filteredProjects.length > 0 ? (
-                <motion.div layout className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {filteredProjects.map((project, index) => (
-                    <ProjectCard key={project.id} project={project} index={index} darkMode={darkMode} />
-                  ))}
-                </motion.div>
+                <div className="space-y-16">
+                  {projectGroups.map((group) => {
+                    const groupProjects = filteredProjects.filter((project) => project.group === group.id).sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)))
+                    if (!groupProjects.length) return null
+                    return (
+                      <section key={group.id} aria-labelledby={`group-${group.id}`}>
+                        <h3 id={`group-${group.id}`} className={`text-2xl font-bold mb-6 ${darkMode ? "text-green-300" : "text-purple-800"}`}>
+                          {group.title}
+                        </h3>
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                          {groupProjects.map((project) => (
+                            <ProjectCard key={project.id} project={project} darkMode={darkMode} />
+                          ))}
+                        </div>
+                      </section>
+                    )
+                  })}
+                </div>
               ) : (
                 <motion.div
                   initial={{ opacity: 0 }}
@@ -876,7 +574,6 @@ export default function Portfolio() {
                     label: "Email",
                     value: "pedrocssolza@gmail.com",
                     href: "mailto:pedrocssolza@gmail.com",
-                    copy: true,
                   },
                   {
                     icon: Github,
@@ -890,24 +587,7 @@ export default function Portfolio() {
                     value: "Pedro Cezar",
                     href: "https://linkedin.com/in/pedrocezar",
                   },
-                  {
-                    icon: MessageCircle,
-                    label: "WhatsApp",
-                    value: "BOT Coming Soon",
-                    //value: "+55 (99) 99999-9999",
-                    href: "https://wa.me/5599999999999",
-                  },
                 ].map((contact, index) => {
-                  const handleEmailClick = (e: React.MouseEvent) => {
-                    if (contact.copy) {
-                      e.preventDefault()
-                      navigator.clipboard.writeText(contact.value)
-                      window.open(contact.href, "_blank")
-                      // Opcional: feedback visual
-                      alert("E-mail copiado para a área de transferência!")
-                    }
-                  }
-
                   return (
                     <motion.a
                       key={index}
@@ -923,7 +603,6 @@ export default function Portfolio() {
                         ? "bg-slate-800/30 border-green-500/30 hover:shadow-lg hover:shadow-green-500/25"
                         : "bg-white/30 border-purple-200/50 hover:shadow-lg hover:shadow-purple-500/25"
                         }`}
-                      onClick={contact.copy ? handleEmailClick : undefined}
                     >
                       <div
                         className={`p-3 rounded-full ${darkMode ? "bg-green-500/20 text-green-300" : "bg-purple-500/20 text-purple-600"
@@ -951,11 +630,13 @@ export default function Portfolio() {
         >
           <div className="container mx-auto px-6 text-center">
             <p className={`${darkMode ? "text-gray-400" : "text-gray-600"}`}>
-              © 2025 Pedro Cezar. Todos os direitos reservados.
+              © {new Date().getFullYear()} Pedro Cezar. Todos os direitos reservados.
             </p>
           </div>
         </footer>
       </div>
     </div>
+    </MotionConfig>
+    </LazyMotion>
   )
 }

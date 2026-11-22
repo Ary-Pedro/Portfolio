@@ -1,6 +1,6 @@
 "use client"
 
-import { motion, useInView } from "framer-motion"
+import { m as motion, useInView, useReducedMotion } from "framer-motion"
 import { useRef, useEffect, useState } from "react"
 import type { LucideIcon } from "lucide-react"
 
@@ -18,43 +18,38 @@ interface CounterStatProps {
 export default function CounterStat({ stat, index, darkMode }: CounterStatProps) {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true })
+  const reducedMotion = useReducedMotion()
   const [count, setCount] = useState(0)
 
   useEffect(() => {
+    if (reducedMotion) {
+      setCount(stat.value)
+      return
+    }
     if (isInView) {
+      let counter: ReturnType<typeof setInterval> | undefined
       const timer = setTimeout(() => {
-        const duration = 2000
-        const steps = 60
+        const duration = 1200
+        const steps = 30
         const increment = stat.value / steps
         let current = 0
 
-        const counter = setInterval(() => {
+        counter = setInterval(() => {
           current += increment
           if (current >= stat.value) {
             setCount(stat.value)
             clearInterval(counter)
 
-            // Shake effect when complete
-            setTimeout(() => {
-              const element = ref.current as HTMLElement | null
-              if (element) {
-                element.style.animation = "shake 0.5s ease-in-out"
-                setTimeout(() => {
-                  element.style.animation = ""
-                }, 500)
-              }
-            }, 100)
           } else {
             setCount(Math.floor(current))
           }
         }, duration / steps)
 
-        return () => clearInterval(counter)
       }, index * 200)
 
-      return () => clearTimeout(timer)
+      return () => { clearTimeout(timer); clearInterval(counter) }
     }
-  }, [isInView, stat.value, index])
+  }, [isInView, stat.value, index, reducedMotion])
 
   return (
     <motion.div

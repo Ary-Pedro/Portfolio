@@ -1,27 +1,17 @@
 "use client"
 
-import { motion } from "framer-motion"
+import { m as motion } from "framer-motion"
 import { ExternalLink, Github } from "lucide-react"
 import Image from "next/image"
+import { memo } from "react"
+import type { Project } from "@/lib/projects"
 
 interface ProjectCardProps {
-  project: {
-    id: number
-    title: string
-    description: string
-    image: string
-    technologies: string[]
-    category: string
-    status: string
-    featured: boolean
-    demoLink: string
-    codeLink: string
-  }
-  index: number
+  project: Project
   darkMode: boolean
 }
 
-export default function ProjectCard({ project, index, darkMode }: ProjectCardProps) {
+function ProjectCard({ project, darkMode }: ProjectCardProps) {
   const getCategoryLabel = (category: string) => {
     const labels: { [key: string]: string } = {
       individual: "Individual",
@@ -54,14 +44,8 @@ export default function ProjectCard({ project, index, darkMode }: ProjectCardPro
   }
 
   return (
-    <motion.div
-      layout
-      initial={{ y: 50, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      exit={{ y: -50, opacity: 0 }}
-      transition={{ duration: 0.6, delay: index * 0.1 }}
-      whileHover={{ y: -8 }}
-      className={`relative overflow-hidden rounded-xl transition-all duration-300 group backdrop-blur-sm border ${
+    <article
+      className={`project-card relative flex h-full flex-col overflow-hidden rounded-xl transition-all duration-300 group hover:-translate-y-2 motion-reduce:hover:translate-y-0 border ${
         darkMode
           ? "bg-slate-800/30 border-green-500/30 hover:shadow-xl hover:shadow-green-500/25"
           : "bg-white/30 border-purple-200/50 hover:shadow-xl hover:shadow-purple-500/25"
@@ -71,73 +55,80 @@ export default function ProjectCard({ project, index, darkMode }: ProjectCardPro
       {project.featured && (
         <div className="absolute top-4 left-4 z-10">
           <span
-            className={`px-2 py-1 text-xs font-semibold rounded-full backdrop-blur-sm border ${
+            className={`px-2 py-1 text-xs font-semibold rounded-full border ${
               darkMode
                 ? "bg-yellow-500/20 text-yellow-300 border-yellow-500/30"
                 : "bg-yellow-500/20 text-yellow-600 border-yellow-200"
             }`}
           >
-            {typeof project.featured === "string" ? project.featured : "Destaque"}
+            Destaque
           </span>
         </div>
       )}
 
       {/* Category Badge */}
-      <div className="absolute top-4 right-4 z-10">
+      {project.category !== "unknown" && <div className="absolute top-4 right-4 z-10">
         <span
-          className={`px-2 py-1 text-xs font-semibold rounded-full border backdrop-blur-sm ${getCategoryColor(project.category)}`}
+          className={`px-2 py-1 text-xs font-semibold rounded-full border ${getCategoryColor(project.category)}`}
         >
           {getCategoryLabel(project.category)}
         </span>
-      </div>
+      </div>}
 
-      <div className="relative overflow-hidden">
+      <div className={`relative overflow-hidden ${project.imageStyle === "logo" ? (darkMode ? "bg-[#9f9081]" : "bg-[#ded1ba]") : ""}`}>
         <Image
-          src={project.image || "/placeholder.svg"}
+          src={/\.(webp|png|svg)$/.test(project.image) ? project.image : `${project.image}-${darkMode ? "dark" : "light"}.webp`}
           alt={project.title}
           width={300}
           height={200}
-          className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
+          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          className={`w-full h-48 transition-transform duration-300 group-hover:scale-105 ${project.imageStyle === "logo" ? "object-contain p-8" : "object-cover"}`}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
         {/* Hover overlay with links */}
-        <div className="absolute inset-0 flex items-center justify-center space-x-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        <div className="absolute inset-0 flex items-center justify-center space-x-4 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-300">
+          {project.demoLink && (
           <motion.a
             href={project.demoLink}
             target="_blank"
             rel="noopener noreferrer"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
-            className="p-3 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition-colors border border-white/30"
-            title="Ver Demo"
+            className="p-3 bg-white/20 rounded-full text-white hover:bg-white/30 transition-colors border border-white/30"
+            title="Ver site"
+            aria-label={`Ver site de ${project.title}`}
           >
             <ExternalLink size={20} />
           </motion.a>
+          )}
+          {project.codeLink && (
           <motion.a
             href={project.codeLink}
             target="_blank"
             rel="noopener noreferrer"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
-            className="p-3 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition-colors border border-white/30"
+            className="p-3 bg-white/20 rounded-full text-white hover:bg-white/30 transition-colors border border-white/30"
             title="Ver Código"
+            aria-label={`Ver código de ${project.title}`}
           >
             <Github size={20} />
           </motion.a>
+          )}
         </div>
       </div>
 
-      <div className="p-6">
-        <h3 className={`text-xl font-bold mb-3 ${darkMode ? "text-green-300" : "text-purple-800"}`}>{project.title}</h3>
+      <div className="flex flex-1 flex-col p-6">
+        <h4 className={`text-xl font-bold mb-3 ${darkMode ? "text-green-300" : "text-purple-800"}`}>{project.title}</h4>
 
-        <p className={`mb-4 ${darkMode ? "text-gray-200" : "text-gray-700"}`}>{project.description}</p>
+        <p className={`mb-4 flex-1 ${darkMode ? "text-gray-200" : "text-gray-700"}`}>{project.description}</p>
 
-        <div className="flex flex-wrap gap-2 mb-4">
-          {project.technologies.slice(0, 5).map((tech, techIndex) => (
+        <div className="flex min-h-[6.5rem] content-start flex-wrap gap-2 mb-4" aria-label="Tecnologias e ferramentas">
+          {project.technologies.map((tech, techIndex) => (
             <span
               key={techIndex}
-              className={`px-3 py-1 text-sm rounded-full backdrop-blur-sm border ${
+              className={`px-3 py-1 text-sm rounded-full border ${
                 darkMode
                   ? "bg-slate-700/30 text-gray-300 border-slate-600/50"
                   : "bg-gray-100/50 text-gray-600 border-gray-200/50"
@@ -146,47 +137,42 @@ export default function ProjectCard({ project, index, darkMode }: ProjectCardPro
               {tech}
             </span>
           ))}
-          {project.technologies.length > 5 && (
-            <span className={`px-3 py-1 text-sm rounded-full ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
-              +{project.technologies.length - 5}
-            </span>
-          )}
         </div>
 
-        <div className="flex justify-between items-center">
+        <div className="flex min-h-[38px] justify-between items-center gap-2">
           <div className="flex space-x-3">
-            <motion.a
+            {project.demoLink && <motion.a
               href={project.demoLink}
               target="_blank"
               rel="noopener noreferrer"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors backdrop-blur-sm border ${
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${
                 darkMode
                   ? "bg-green-500/20 text-green-300 hover:bg-green-500/30 border-green-500/30"
                   : "bg-purple-500/20 text-purple-600 hover:bg-purple-500/30 border-purple-500/30"
               }`}
             >
-              Demo
-            </motion.a>
-            <motion.a
+              Site
+            </motion.a>}
+            {project.codeLink && <motion.a
               href={project.codeLink}
               target="_blank"
               rel="noopener noreferrer"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors backdrop-blur-sm border ${
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${
                 darkMode
                   ? "bg-slate-700/30 text-gray-300 hover:bg-slate-600/30 border-slate-600/50"
                   : "bg-gray-200/50 text-gray-600 hover:bg-gray-300/50 border-gray-300/50"
               }`}
             >
               Código
-            </motion.a>
+            </motion.a>}
           </div>
 
-          <div
-            className={`text-xs px-2 py-1 rounded-full backdrop-blur-sm border ${
+          {project.status === "completed" && <div
+            className={`text-xs px-2 py-1 rounded-full border ${
               project.status === "completed"
                 ? darkMode
                   ? "bg-green-500/20 text-green-300 border-green-500/30"
@@ -197,9 +183,11 @@ export default function ProjectCard({ project, index, darkMode }: ProjectCardPro
             }`}
           >
             {project.status === "completed" ? "Concluído" : "Em Andamento"}
-          </div>
+          </div>}
         </div>
       </div>
-    </motion.div>
+    </article>
   )
 }
+
+export default memo(ProjectCard)

@@ -1,7 +1,7 @@
 "use client"
 
-import { motion } from "framer-motion"
-import { useState } from "react"
+import { m as motion } from "framer-motion"
+import { memo, useState } from "react"
 
 interface TechStackProps {
   darkMode: boolean
@@ -10,7 +10,7 @@ interface TechStackProps {
 interface Technology {
   name: string
   level: number
-  proficiency: "Básico" | "Intermediário" | "Avançado"
+  proficiency: "Básico" | "Intermediário" | "Avançado" | "📖CURSO" | "📖CURSO💸" | "💸CURSO" | "▶YouTube" | "🎮Prática" | "📦Developer Pack " | "🤖IA"
 }
 
 interface TechCategory {
@@ -19,7 +19,7 @@ interface TechCategory {
   technologies: Technology[]
 }
 
-export default function TechStack({ darkMode }: TechStackProps) {
+function TechStack({ darkMode }: TechStackProps) {
   const [activeTab, setActiveTab] = useState("linguagens")
 
   const techCategories: TechCategory[] = [
@@ -239,19 +239,6 @@ export default function TechStack({ darkMode }: TechStackProps) {
                     : "bg-gradient-to-r from-purple-600 to-blue-600"
                 }`}
               >
-                {/* Animated shine effect */}
-                <motion.div
-                  animate={{
-                    x: ["-100%", "100%"],
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Number.POSITIVE_INFINITY,
-                    ease: "linear",
-                  }}
-                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
-                  style={{ width: "50%" }}
-                />
               </motion.div>
             </div>
           </motion.div>
@@ -260,3 +247,5 @@ export default function TechStack({ darkMode }: TechStackProps) {
     </div>
   )
 }
+
+export default memo(TechStack)

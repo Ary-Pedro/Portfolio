@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef } from "react"
 
 interface Particle {
   x: number
@@ -62,8 +62,7 @@ export default function ParticleBackground({ darkMode }: ParticleBackgroundProps
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const particlesRef = useRef<Particle[]>([])
   const mouseRef = useRef({ x: 0, y: 0, active: false, intensity: 0 })
-  const animationRef = useRef<number>()
-  const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
+  const animationRef = useRef<number | null>(null)
   const timeRef = useRef(0)
   const windForcesRef = useRef<WindForce[]>([])
   const vorticesRef = useRef<Vortex[]>([])
@@ -81,7 +80,6 @@ export default function ParticleBackground({ darkMode }: ParticleBackgroundProps
     const resizeCanvas = () => {
       canvas.width = window.innerWidth
       canvas.height = window.innerHeight
-      setDimensions({ width: window.innerWidth, height: window.innerHeight })
     }
 
     const initializeWindForces = () => {
@@ -213,7 +211,7 @@ export default function ParticleBackground({ darkMode }: ParticleBackgroundProps
 
     const createParticles = () => {
       const particles: Particle[] = []
-      const particleCount = 120
+      const particleCount = window.innerWidth < 768 ? 36 : 64
 
       // Cores com tons de roxo/azul/rosa com 30% de saturação
       const colors = darkMode
@@ -286,29 +284,9 @@ export default function ParticleBackground({ darkMode }: ParticleBackgroundProps
       particlesRef.current = particles
     }
 
-    const calculateLocalDensity = (particle: Particle, particles: Particle[]) => {
-      let density = 0
-      const checkRadius = 50
-
-      particles.forEach((other) => {
-        if (other !== particle) {
-          const dx = other.x - particle.x
-          const dy = other.y - particle.y
-          const distance = Math.sqrt(dx * dx + dy * dy)
-
-          if (distance < checkRadius) {
-            density += (checkRadius - distance) / checkRadius
-          }
-        }
-      })
-
-      return Math.min(density / 5, 1) // Normalizar
-    }
-
-    const applyWindForces = (particle: Particle, time: number) => {
+    const calculateWindForces = (time: number) => {
       let totalWindX = 0
       let totalWindY = 0
-      let totalInfluence = 0
 
       // Ventos suaves normais
       windForcesRef.current.forEach((wind, index) => {
@@ -325,7 +303,7 @@ export default function ParticleBackground({ darkMode }: ParticleBackgroundProps
 
         // Intensidade final muito reduzida
         const currentIntensity =
-          wind.baseIntensity * intensityVariation * uniqueVariation * particle.windResistance * 0.5
+          wind.baseIntensity * intensityVariation * uniqueVariation * 0.5
 
         // Calcular componentes do vento
         const windX = Math.cos(wind.angle) * currentIntensity
@@ -334,7 +312,6 @@ export default function ParticleBackground({ darkMode }: ParticleBackgroundProps
         // Acumular forças de todos os ventos simultaneamente
         totalWindX += windX
         totalWindY += windY
-        totalInfluence += currentIntensity
       })
 
       // Aplicar rajadas fortes
@@ -356,7 +333,7 @@ export default function ParticleBackground({ darkMode }: ParticleBackgroundProps
 
         // Aplicar a rajada com variação temporal para torná-la mais orgânica
         const gustVariation = 1 + Math.sin(time * 0.01) * 0.3
-        const finalGustIntensity = gustIntensity * gustVariation * particle.windResistance
+        const finalGustIntensity = gustIntensity * gustVariation
 
         const gustX = Math.cos(gust.angle) * finalGustIntensity
         const gustY = Math.sin(gust.angle) * finalGustIntensity
@@ -365,20 +342,7 @@ export default function ParticleBackground({ darkMode }: ParticleBackgroundProps
         totalWindY += gustY
       })
 
-      // Aplicar força combinada de todos os ventos de forma muito suave
-      const smoothingFactor = 0.3 // Muito mais suave
-      particle.vx += totalWindX * smoothingFactor
-      particle.vy += totalWindY * smoothingFactor
-
-      // Micro-turbulências ainda mais sutis
-      const microTurbulence = 0.0005 // Reduzido pela metade
-      particle.vx += (Math.random() - 0.5) * microTurbulence
-      particle.vy += (Math.random() - 0.5) * microTurbulence
-
-      // Adicionar um efeito de "respiração" global muito sutil
-      const globalBreathing = Math.sin(time * 0.0005) * 0.001
-      particle.vx += globalBreathing * Math.cos(particle.colorCycle)
-      particle.vy += globalBreathing * Math.sin(particle.colorCycle)
+      return { x: totalWindX * 0.3, y: totalWindY * 0.3, breathing: Math.sin(time * 0.0005) * 0.001 }
     }
 
     const applyVortexForces = (particle: Particle) => {
@@ -392,7 +356,7 @@ export default function ParticleBackground({ darkMode }: ParticleBackgroundProps
         const dy = particle.y - vortex.y
         const distance = Math.sqrt(dx * dx + dy * dy)
 
-        if (distance < vortex.radius) {
+        if (distance > 0 && distance < vortex.radius) {
           particle.inVortex = true
           const influence = (vortex.radius - distance) / vortex.radius
           particle.vortexInfluence = Math.max(particle.vortexInfluence, influence)
@@ -415,7 +379,8 @@ export default function ParticleBackground({ darkMode }: ParticleBackgroundProps
       })
     }
 
-    const handleParticleCollisions = (particles: Particle[]) => {
+    const updateParticleInteractions = (particles: Particle[]) => {
+      particles.forEach((particle) => { particle.localDensity = 0 })
       for (let i = 0; i < particles.length; i++) {
         for (let j = i + 1; j < particles.length; j++) {
           const p1 = particles[i]
@@ -423,7 +388,12 @@ export default function ParticleBackground({ darkMode }: ParticleBackgroundProps
 
           const dx = p2.x - p1.x
           const dy = p2.y - p1.y
-          const distance = Math.sqrt(dx * dx + dy * dy)
+          const distanceSquared = dx * dx + dy * dy
+          if (distanceSquared >= 2500) continue
+          const distance = Math.sqrt(distanceSquared)
+          const density = (50 - distance) / 250
+          p1.localDensity += density
+          p2.localDensity += density
           const minDistance = (p1.size + p2.size) * 0.8
 
           if (distance < minDistance && distance > 0) {
@@ -458,6 +428,7 @@ export default function ParticleBackground({ darkMode }: ParticleBackgroundProps
           }
         }
       }
+      particles.forEach((particle) => { particle.localDensity = Math.min(particle.localDensity, 1) })
     }
 
     const drawParticle = (particle: Particle, time: number) => {
@@ -569,12 +540,9 @@ export default function ParticleBackground({ darkMode }: ParticleBackgroundProps
       // Brilho para partículas energéticas
       if (particle.energy > 35 || particle.inVortex || hasActiveGust) {
         ctx.globalAlpha = 0.1
-        ctx.shadowBlur = 10
-        ctx.shadowColor = particle.color
         ctx.beginPath()
         ctx.arc(0, 0, currentSize * 1.5, 0, Math.PI * 2)
         ctx.fill()
-        ctx.shadowBlur = 0
       }
 
       ctx.restore()
@@ -590,23 +558,23 @@ export default function ParticleBackground({ darkMode }: ParticleBackgroundProps
       // Criar vórtices periodicamente
       createVortex(time)
       updateVortices(deltaTime)
+      const wind = calculateWindForces(time)
+      const hasActiveGust = strongGustsRef.current.some((gust) => gust.active)
 
-      particles.forEach((particle, index) => {
-        // Calcular densidade local
-        particle.localDensity = calculateLocalDensity(particle, particles)
-
+      particles.forEach((particle) => {
         // Atualizar trilha
         particle.trail.push({
           x: particle.x,
           y: particle.y,
           opacity: particle.opacity,
         })
-        if (particle.trail.length > 6) {
+        if (particle.trail.length > 3) {
           particle.trail.shift()
         }
 
         // Aplicar forças do vento (incluindo rajadas)
-        applyWindForces(particle, time)
+        particle.vx += wind.x * particle.windResistance + (Math.random() - 0.5) * 0.0005 + wind.breathing * Math.cos(particle.colorCycle)
+        particle.vy += wind.y * particle.windResistance + (Math.random() - 0.5) * 0.0005 + wind.breathing * Math.sin(particle.colorCycle)
 
         // Aplicar forças de vórtice
         applyVortexForces(particle)
@@ -617,7 +585,7 @@ export default function ParticleBackground({ darkMode }: ParticleBackgroundProps
           const dy = particle.y - mouseRef.current.y
           const distance = Math.sqrt(dx * dx + dy * dy)
 
-          if (distance < 100) {
+          if (distance > 0 && distance < 100) {
             const force = (100 - distance) / 100
             const intensity = mouseRef.current.intensity * force * 0.015
 
@@ -647,7 +615,6 @@ export default function ParticleBackground({ darkMode }: ParticleBackgroundProps
         else if (particle.y > canvas.height + margin) particle.y = -margin
 
         // Damping ainda mais suave (mas um pouco menos durante rajadas)
-        const hasActiveGust = strongGustsRef.current.some((gust) => gust.active)
         const dampingFactor = hasActiveGust ? 0.996 : 0.998
         particle.vx *= dampingFactor
         particle.vy *= dampingFactor
@@ -659,7 +626,7 @@ export default function ParticleBackground({ darkMode }: ParticleBackgroundProps
       })
 
       // Lidar com colisões
-      handleParticleCollisions(particles)
+      updateParticleInteractions(particles)
     }
 
     let lastTime = 0
@@ -675,7 +642,21 @@ export default function ParticleBackground({ darkMode }: ParticleBackgroundProps
       animationRef.current = requestAnimationFrame(animate)
     }
 
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)")
+    const updateAnimation = () => {
+      if (animationRef.current !== null) cancelAnimationFrame(animationRef.current)
+      animationRef.current = null
+      if (!document.hidden && !reducedMotion.matches) {
+        lastTime = performance.now()
+        animationRef.current = requestAnimationFrame(animate)
+      } else {
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+      }
+    }
+
+    let mouseTimeout: ReturnType<typeof setTimeout> | undefined
     const handleMouseMove = (e: MouseEvent) => {
+      if (document.hidden || reducedMotion.matches) return
       const prevX = mouseRef.current.x
       const prevY = mouseRef.current.y
 
@@ -688,7 +669,8 @@ export default function ParticleBackground({ darkMode }: ParticleBackgroundProps
       const speed = Math.sqrt(dx * dx + dy * dy)
       mouseRef.current.intensity = Math.min(3, speed * 0.1)
 
-      setTimeout(() => {
+      clearTimeout(mouseTimeout)
+      mouseTimeout = setTimeout(() => {
         mouseRef.current.active = false
         mouseRef.current.intensity = 0
       }, 200)
@@ -697,19 +679,24 @@ export default function ParticleBackground({ darkMode }: ParticleBackgroundProps
     resizeCanvas()
     initializeWindForces()
     createParticles()
-    animate(0)
+    updateAnimation()
 
     window.addEventListener("resize", resizeCanvas)
     window.addEventListener("mousemove", handleMouseMove)
+    document.addEventListener("visibilitychange", updateAnimation)
+    reducedMotion.addEventListener("change", updateAnimation)
 
     return () => {
       window.removeEventListener("resize", resizeCanvas)
       window.removeEventListener("mousemove", handleMouseMove)
-      if (animationRef.current) {
+      clearTimeout(mouseTimeout)
+      document.removeEventListener("visibilitychange", updateAnimation)
+      reducedMotion.removeEventListener("change", updateAnimation)
+      if (animationRef.current !== null) {
         cancelAnimationFrame(animationRef.current)
       }
     }
   }, [darkMode])
 
-  return <canvas ref={canvasRef} className="w-full h-full" style={{ background: "transparent" }} />
+  return <canvas ref={canvasRef} aria-hidden="true" className="w-full h-full" style={{ background: "transparent" }} />
 }
