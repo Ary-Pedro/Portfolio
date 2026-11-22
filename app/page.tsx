@@ -198,6 +198,7 @@ export default function Portfolio() {
           )}
         </AnimatePresence>
 
+        <main>
         {/* about me Section */}
         <section className="min-h-screen flex items-center justify-center pt-20">
           <div className="container mx-auto px-6 text-center">
@@ -623,6 +624,7 @@ export default function Portfolio() {
           </div>
         </section>
 
+        </main>
         {/* Footer */}
         <footer
           className={`py-8 border-t backdrop-blur-sm ${darkMode ? "border-green-500/20 bg-slate-900/30" : "border-t-[2px] border-[#a78bfa]/40 bg-white/30"
