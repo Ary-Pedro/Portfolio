@@ -23,10 +23,15 @@ import ProjectCard from "@/components/project-card"
 import TechStack from "@/components/tech-stack"
 import CounterStat from "@/components/counter-stat"
 import { filterProjects, projectGroups, projects } from "@/lib/projects"
+import { translate, type Language } from "@/lib/i18n"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import Image from "next/image"
 
 const ParticleBackground = dynamic(() => import("@/components/particle-background"), { ssr: false })
 
 export default function Portfolio() {
+  const [language, setLanguage] = useState<Language>("pt-BR")
+  const t = (text: string) => translate(language, text)
   const [darkMode, setDarkMode] = useState(false)
   const [mounted, setMounted] = useState(false)
 
@@ -34,6 +39,8 @@ export default function Portfolio() {
   const [selectedFilter, setSelectedFilter] = useState("all")
   useEffect(() => {
     setMounted(true)
+    const savedLanguage = localStorage.getItem("language")
+    if (savedLanguage === "en" || savedLanguage === "es" || savedLanguage === "zh-CN") setLanguage(savedLanguage)
     const saved = localStorage.getItem("darkMode")
     if (saved) {
       setDarkMode(saved === "true")
@@ -47,7 +54,15 @@ export default function Portfolio() {
     }
   }, [darkMode, mounted])
 
-  const filteredProjects = filterProjects(projects, searchTerm, selectedFilter)
+  useEffect(() => {
+    if (mounted) {
+      localStorage.setItem("language", language)
+      document.documentElement.lang = language
+    }
+  }, [language, mounted])
+
+  const translatedProjects = projects.map((project) => ({ ...project, title: t(project.title), description: t(project.description) }))
+  const filteredProjects = filterProjects(translatedProjects, searchTerm, selectedFilter)
 
   const toggleTheme = () => {
     setDarkMode(!darkMode)
@@ -113,12 +128,24 @@ export default function Portfolio() {
         <nav className="container mx-auto px-6 py-4 flex justify-between items-center">
           <motion.div
             whileHover={{ scale: 1.05 }}
-            className={`text-2xl font-bold ${darkMode ? "text-green-300" : "text-purple-800"}`}
+            className={`text-lg sm:text-2xl font-bold whitespace-nowrap ${darkMode ? "text-green-300" : "text-purple-800"}`}
           >
             Pedro Cézar S. S.
           </motion.div>
 
-          <div className="flex items-center space-x-8">
+          <div className="flex items-center gap-3 md:gap-8">
+            <DropdownMenu>
+              <DropdownMenuTrigger aria-label={t("Escolher idioma")} className="flex items-center rounded-md p-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-purple-500">
+                <Image src={`/flags/${language}.svg`} alt="" width={30} height={20} className="rounded-sm" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {([ ["pt-BR", "Português (Brasil)"], ["en", "English"], ["es", "Español"], ["zh-CN", "简体中文"] ] as const).map(([code, name]) => (
+                  <DropdownMenuItem key={code} onSelect={() => setLanguage(code)} lang={code} aria-current={language === code ? "true" : undefined}>
+                    <Image src={`/flags/${code}.svg`} alt="" width={24} height={16} className="mr-2 rounded-sm" />{name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
             <div className="hidden md:flex space-x-6">
               {[
                 { name: "Sobre", id: "sobre" },
@@ -127,7 +154,7 @@ export default function Portfolio() {
                 { name: "Contato", id: "contato" },
               ].map((item, index) => (
                 <motion.button
-                  key={item.name}
+                  key={t(item.name)}
                   onClick={() => scrollToSection(item.id)}
                   initial={{ y: -20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
@@ -136,7 +163,7 @@ export default function Portfolio() {
                   className={`transition-colors cursor-pointer ${darkMode ? "text-gray-300 hover:text-green-300" : "text-gray-700 hover:text-purple-600"
                     }`}
                 >
-                  {item.name}
+                  {t(item.name)}
                 </motion.button>
               ))}
             </div>
@@ -144,7 +171,7 @@ export default function Portfolio() {
             {/* Theme toggle with smooth, single entrance animation and no re-trigger */}
             <motion.button
               onClick={toggleTheme}
-              aria-label={darkMode ? "Ativar tema claro" : "Ativar tema escuro"}
+              aria-label={t(darkMode ? "Ativar tema claro" : "Ativar tema escuro")}
               whileHover={{ rotate: darkMode ? -15 : 15, transition: { duration: 0.18, type: "tween" } }}
               whileTap={{ scale: 0.95 }}
               className={`p-3 rounded-full transition-all duration-300 ${darkMode
@@ -229,7 +256,7 @@ export default function Portfolio() {
                 transition={{ duration: 0.8, delay: 0.4 }}
                 className={`text-xl md:text-2xl mb-8 ${darkMode ? "text-gray-300" : "text-gray-600"}`}
               >
-                Desenvolvedor Full Stack & Designer UI/UX
+                {t("Engenheiro de Software")}
               </motion.p>
 
               <motion.div
@@ -247,7 +274,7 @@ export default function Portfolio() {
                   <motion.a
                     key={index}
                     href={social.href}
-                    aria-label={social.label}
+                    aria-label={t(social.label)}
                     whileHover={{ scale: 1.2, y: -5 }}
                     whileTap={{ scale: 0.9 }}
                     className={`p-4 rounded-full transition-all duration-300 backdrop-blur-sm border ${darkMode
@@ -300,7 +327,7 @@ export default function Portfolio() {
                         { icon: Coffee, value: totalCoffees, label: "Cafés", suffix: "+" },
                         { icon: Code, value: years, label: "Anos", suffix: "+" },
                       ].map((stat, index) => (
-                        <CounterStat key={index} stat={stat} index={index} darkMode={darkMode} />
+                        <CounterStat key={index} stat={{ ...stat, label: t(stat.label) }} index={index} darkMode={darkMode} />
                       ))
                     })()}
                   </div>
@@ -321,7 +348,7 @@ export default function Portfolio() {
               className="text-center mb-16"
             >
               <h2 className={`text-4xl md:text-5xl font-bold mb-6 ${darkMode ? "text-white" : "text-slate-800"}`}>
-                Sobre Mim
+                {t("Sobre Mim")}
               </h2>
               <div
                 className={`w-24 h-1 mx-auto rounded-full ${darkMode
@@ -341,20 +368,19 @@ export default function Portfolio() {
                   }`}
               >
                 <p className={`text-lg leading-relaxed mb-6 text-justify ${darkMode ? "text-gray-200" : "text-gray-700"}`}>
-                  Olá! sou um DEV, para mim programar é abraçar desafios.
+                  {t("Olá! sou um DEV, para mim programar é abraçar desafios.")}
                 </p>
                 <p className={`text-lg leading-relaxed mb-6 text-justify ${darkMode ? "text-gray-200" : "text-gray-700"}`}>
-                  Aprecio trabalhar com back-end, arquitetar  bancos de dados, criar APIs robustas e explorar soluções de inteligência artificial e automação,
-                  sei me virar no front-end quando preciso, pois entendi desde o início que, para começar na programação, é preciso ser versátil.  <br />
-                  Aqui você vai encontrar exemplos de aplicações que envolvem desde a lógica de negócio no back-end até implementações para o front-end. Tudo isso com foco em deixar o código legível, escalável e prático.
+                  {t("Aprecio trabalhar com back-end, arquitetar bancos de dados, criar APIs robustas e explorar soluções de inteligência artificial e automação, sei me virar no front-end quando preciso, pois entendi desde o início que, para começar na programação, é preciso ser versátil.")} <br />
+                  {t("Aqui você vai encontrar exemplos de aplicações que envolvem desde a lógica de negócio no back-end até implementações para o front-end. Tudo isso com foco em deixar o código legível, escalável e prático.")}
                 </p>
                 <p className={`text-lg leading-relaxed mb-6 text-justify ${darkMode ? "text-gray-200" : "text-gray-700"}`}>
-                  Se quiser ver mais sobre ou trocar uma ideia sobre tecnologia
+                  {t("Se quiser ver mais sobre ou trocar uma ideia sobre tecnologia")}
                   <span className={`font-bold text-1xl transition-colors duration-300 ${darkMode
                     ? "bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent"
                     : "bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent"
                     }`}>
-                    <br />VAMOS CONECTAR!
+                    <br />{t("VAMOS CONECTAR!")}
                   </span>
                 </p>
               </motion.div>
@@ -383,8 +409,8 @@ export default function Portfolio() {
                       }`}
                   >
                     <item.icon className={`w-8 h-8 mb-3 ${darkMode ? "text-green-400" : "text-purple-600"}`} />
-                    <h3 className={`font-semibold mb-2 ${darkMode ? "text-white" : "text-slate-800"}`}>{item.title}</h3>
-                    <p className={`text-sm ${darkMode ? "text-gray-300" : "text-gray-600"}`}>{item.desc}</p>
+                    <h3 className={`font-semibold mb-2 ${darkMode ? "text-white" : "text-slate-800"}`}>{t(item.title)}</h3>
+                    <p className={`text-sm ${darkMode ? "text-gray-300" : "text-gray-600"}`}>{t(item.desc)}</p>
                   </motion.div>
                 ))}
               </motion.div>
@@ -404,7 +430,7 @@ export default function Portfolio() {
               className="text-center mb-16"
             >
               <h2 className={`text-4xl md:text-5xl font-bold mb-6 ${darkMode ? "text-white" : "text-slate-800"}`}>
-                Stack Tecnológica
+                {t("Stack Tecnológica")}
               </h2>
               <div
                 className={`w-24 h-1 mx-auto rounded-full ${darkMode
@@ -414,7 +440,7 @@ export default function Portfolio() {
               />
             </motion.div>
 
-            <TechStack darkMode={darkMode} />
+            <TechStack darkMode={darkMode} language={language} />
           </div>
         </section>
 
@@ -432,7 +458,7 @@ export default function Portfolio() {
                 className={`text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r ${darkMode ? "from-green-400 to-blue-400" : "from-purple-600 to-blue-600"
                   } bg-clip-text text-transparent`}
               >
-                Projetos
+                {t("Projetos")}
               </h2>
               <div
                 className={`w-24 h-1 mx-auto rounded-full ${darkMode
@@ -457,8 +483,8 @@ export default function Portfolio() {
                 />
                 <input
                   type="text"
-                  placeholder="Buscar projetos..."
-                  aria-label="Buscar projetos"
+                  placeholder={t("Buscar projetos...")}
+                  aria-label={t("Buscar projetos")}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 backdrop-blur-sm transition-all duration-300 ${darkMode
@@ -470,7 +496,7 @@ export default function Portfolio() {
 
               {/* Filter Buttons */}
               <p className={`md:hidden mb-2 text-sm ${darkMode ? "text-gray-300" : "text-gray-600"}`}>
-                Deslize para ver mais filtros
+                {t("Deslize para ver mais filtros")}
               </p>
               <div className="flex flex-nowrap md:flex-wrap md:justify-center gap-3 overflow-x-auto pb-2">
                 {filters.map((filter) => (
@@ -490,7 +516,7 @@ export default function Portfolio() {
                       }`}
                   >
                     <Filter className="w-3 h-3" />
-                    <span>{filter.label}</span>
+                    <span>{t(filter.label)}</span>
                   </motion.button>
                 ))}
               </div>
@@ -498,7 +524,7 @@ export default function Portfolio() {
 
             {/* Projects Grid */}
             <p className={`mb-8 text-sm ${darkMode ? "text-gray-300" : "text-gray-600"}`}>
-              Projetos organizados por área e pelas datas disponíveis.
+              {t("Projetos organizados por área e pelas datas disponíveis.")}
             </p>
             <AnimatePresence>
               {filteredProjects.length > 0 ? (
@@ -509,11 +535,11 @@ export default function Portfolio() {
                     return (
                       <section key={group.id} aria-labelledby={`group-${group.id}`}>
                         <h3 id={`group-${group.id}`} className={`text-2xl font-bold mb-6 ${darkMode ? "text-green-300" : "text-purple-800"}`}>
-                          {group.title}
+                          {t(group.title)}
                         </h3>
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                           {groupProjects.map((project) => (
-                            <ProjectCard key={project.id} project={project} darkMode={darkMode} />
+                            <ProjectCard key={project.id} project={project} darkMode={darkMode} language={language} />
                           ))}
                         </div>
                       </section>
@@ -529,10 +555,10 @@ export default function Portfolio() {
                 >
                   <div className={`text-6xl mb-4 ${darkMode ? "text-gray-600" : "text-gray-400"}`}>🔍</div>
                   <h3 className={`text-xl font-semibold mb-2 ${darkMode ? "text-gray-300" : "text-gray-600"}`}>
-                    Nenhum projeto encontrado
+                    {t("Nenhum projeto encontrado")}
                   </h3>
                   <p className={`${darkMode ? "text-gray-400" : "text-gray-500"}`}>
-                    Tente ajustar os filtros ou termo de busca
+                    {t("Tente ajustar os filtros ou termo de busca")}
                   </p>
                 </motion.div>
               )}
@@ -551,7 +577,7 @@ export default function Portfolio() {
               className="text-center mb-16"
             >
               <h2 className={`text-4xl md:text-5xl font-bold mb-6 ${darkMode ? "text-white" : "text-slate-800"}`}>
-                Contato
+                {t("Contato")}
               </h2>
               <div
                 className={`w-24 h-1 mx-auto rounded-full ${darkMode
@@ -632,7 +658,7 @@ export default function Portfolio() {
         >
           <div className="container mx-auto px-6 text-center">
             <p className={`${darkMode ? "text-gray-400" : "text-gray-600"}`}>
-              © {new Date().getFullYear()} Pedro Cezar. Todos os direitos reservados.
+              © {new Date().getFullYear()} Pedro Cezar. {t("Todos os direitos reservados.")}
             </p>
           </div>
         </footer>

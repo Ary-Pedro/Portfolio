@@ -2,9 +2,11 @@
 
 import { m as motion } from "framer-motion"
 import { memo, useState } from "react"
+import { translate, type Language } from "@/lib/i18n"
 
 interface TechStackProps {
   darkMode: boolean
+  language: Language
 }
 
 interface Technology {
@@ -19,7 +21,7 @@ interface TechCategory {
   technologies: Technology[]
 }
 
-function TechStack({ darkMode }: TechStackProps) {
+function TechStack({ darkMode, language }: TechStackProps) {
   const [activeTab, setActiveTab] = useState("linguagens")
 
   const techCategories: TechCategory[] = [
@@ -188,7 +190,7 @@ function TechStack({ darkMode }: TechStackProps) {
                   : "bg-white/30 text-gray-600 border-gray-300/50 hover:bg-white/50"
             }`}
           >
-            {category.label}
+            {translate(language, category.label)}
           </motion.button>
         ))}
       </motion.div>
@@ -217,7 +219,7 @@ function TechStack({ darkMode }: TechStackProps) {
               <h3 className={`text-lg font-semibold ${darkMode ? "text-white" : "text-slate-800"}`}>{tech.name}</h3>
               <div className="flex items-center space-x-3">
                 <span className={`text-sm font-medium ${getProficiencyColor(tech.proficiency)}`}>
-                  {tech.proficiency}
+                  {translate(language, tech.proficiency)}
                 </span>
                 <span className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}>{tech.level}%</span>
               </div>

@@ -5,13 +5,16 @@ import { ExternalLink, Github } from "lucide-react"
 import Image from "next/image"
 import { memo } from "react"
 import type { Project } from "@/lib/projects"
+import { translate, type Language } from "@/lib/i18n"
 
 interface ProjectCardProps {
   project: Project
   darkMode: boolean
+  language: Language
 }
 
-function ProjectCard({ project, darkMode }: ProjectCardProps) {
+function ProjectCard({ project, darkMode, language }: ProjectCardProps) {
+  const t = (text: string) => translate(language, text)
   const getCategoryLabel = (category: string) => {
     const labels: { [key: string]: string } = {
       individual: "Individual",
@@ -61,7 +64,7 @@ function ProjectCard({ project, darkMode }: ProjectCardProps) {
                 : "bg-yellow-500/20 text-yellow-600 border-yellow-200"
             }`}
           >
-            Destaque
+            {t("Destaque")}
           </span>
         </div>
       )}
@@ -71,7 +74,7 @@ function ProjectCard({ project, darkMode }: ProjectCardProps) {
         <span
           className={`px-2 py-1 text-xs font-semibold rounded-full border ${getCategoryColor(project.category)}`}
         >
-          {getCategoryLabel(project.category)}
+          {t(getCategoryLabel(project.category))}
         </span>
       </div>}
 
@@ -96,8 +99,8 @@ function ProjectCard({ project, darkMode }: ProjectCardProps) {
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             className="p-3 bg-white/20 rounded-full text-white hover:bg-white/30 transition-colors border border-white/30"
-            title="Ver site"
-            aria-label={`Ver site de ${project.title}`}
+            title={t("Ver site")}
+            aria-label={`${t("Ver site")}: ${project.title}`}
           >
             <ExternalLink size={20} />
           </motion.a>
@@ -110,8 +113,8 @@ function ProjectCard({ project, darkMode }: ProjectCardProps) {
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             className="p-3 bg-white/20 rounded-full text-white hover:bg-white/30 transition-colors border border-white/30"
-            title="Ver Código"
-            aria-label={`Ver código de ${project.title}`}
+            title={t("Ver código")}
+            aria-label={`${t("Ver código")}: ${project.title}`}
           >
             <Github size={20} />
           </motion.a>
@@ -124,7 +127,7 @@ function ProjectCard({ project, darkMode }: ProjectCardProps) {
 
         <p className={`mb-4 flex-1 ${darkMode ? "text-gray-200" : "text-gray-700"}`}>{project.description}</p>
 
-        <div className="flex min-h-[6.5rem] content-start flex-wrap gap-2 mb-4" aria-label="Tecnologias e ferramentas">
+        <div className="flex min-h-[6.5rem] content-start flex-wrap gap-2 mb-4" aria-label={t("Tecnologias e ferramentas")}>
           {project.technologies.map((tech, techIndex) => (
             <span
               key={techIndex}
@@ -134,7 +137,7 @@ function ProjectCard({ project, darkMode }: ProjectCardProps) {
                   : "bg-gray-100/50 text-gray-600 border-gray-200/50"
               }`}
             >
-              {tech}
+              {t(tech)}
             </span>
           ))}
         </div>
@@ -153,7 +156,7 @@ function ProjectCard({ project, darkMode }: ProjectCardProps) {
                   : "bg-purple-500/20 text-purple-600 hover:bg-purple-500/30 border-purple-500/30"
               }`}
             >
-              Site
+              {t("Site")}
             </motion.a>}
             {project.codeLink && <motion.a
               href={project.codeLink}
@@ -167,7 +170,7 @@ function ProjectCard({ project, darkMode }: ProjectCardProps) {
                   : "bg-gray-200/50 text-gray-600 hover:bg-gray-300/50 border-gray-300/50"
               }`}
             >
-              Código
+              {t("Código")}
             </motion.a>}
           </div>
 
@@ -182,7 +185,7 @@ function ProjectCard({ project, darkMode }: ProjectCardProps) {
                   : "bg-yellow-500/20 text-yellow-600 border-yellow-500/30"
             }`}
           >
-            {project.status === "completed" ? "Concluído" : "Em Andamento"}
+            {t(project.status === "completed" ? "Concluído" : "Em Andamento")}
           </div>}
         </div>
       </div>
